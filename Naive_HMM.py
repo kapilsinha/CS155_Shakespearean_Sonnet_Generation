@@ -394,60 +394,64 @@ class HiddenMarkovModel:
 
             states:     The randomly generated states as a list.
         '''
-
-        emission = []
-        state = random.choice(range(self.L))
-        states = []
-        # Maintains set of possible number of syllables up until last word
-        possible_syllables = set([0])
         while True:
-            # Append state.
-            states.append(state)
+            emission = []
+            state = random.choice(range(self.L))
+            states = []
+            # Maintains set of possible number of syllables up until last word
+            possible_syllables = set([0])
+            is_done = False
+            while min(possible_syllables) < M:
+                # Append state.
+                states.append(state)
 
-            # Sample next observation.
-            rand_var = random.uniform(0, 1)
-            next_obs = 0
+                # Sample next observation.
+                rand_var = random.uniform(0, 1)
+                next_obs = 0
 
-            while rand_var > 0:
-                rand_var -= self.O[state][next_obs]
-                next_obs += 1
+                while rand_var > 0:
+                    rand_var -= self.O[state][next_obs]
+                    next_obs += 1
 
-            next_obs -= 1
-            # Always add calculated next observation to emissions and discard
-            # the entire emission if the number of syllables exceeds M
-            emission.append(next_obs)
-            obs_possible_syllables = syllable_dict[next_obs]
-            # If adding this word at the end (and letting the word use the
-            # end number of syllables) brings the sentence to M syllables,
-            # we do so
-            for item in obs_possible_syllables[0]:
-                if M in set(x + item for x in possible_syllables):
-                    return emission, states
-            
-            # Add all possible number of syllables in the sentence up to the
-            # last word and if any of them equal M, return. If the minimum
-            # number exceeds M, restart the function
-            possible_totals = set()
-            for item in obs_possible_syllables[1]:
-                possible_totals = possible_totals.union \
-                        (set(x + item for x in possible_syllables))
-            possible_syllables = possible_syllables.union(possible_totals)
-            if M in possible_syllables:
-                return emission, states
+                next_obs -= 1
+                # Always add calculated next observation to emissions and discard
+                # the entire emission if the number of syllables exceeds M
+                emission.append(next_obs)
+                obs_possible_syllables = syllable_dict[next_obs]
+                # If adding this word at the end (and letting the word use the
+                # end number of syllables) brings the sentence to M syllables,
+                # we do so
 
-            if min(possible_syllables) > M:
-                self.generate_emissions(syllable_dict, M)
+                for item in obs_possible_syllables[0]:
+                    if M in set(x + item for x in possible_syllables):
+                        is_done = True
+                        break
+	            
+                # Add all possible number of syllables in the sentence up to the
+                # last word and if any of them equal M, return. If the minimum
+                # number exceeds M, restart the function
+                possible_totals = set()
+                for item in obs_possible_syllables[1]:
+                    possible_totals = possible_totals.union \
+                            (set(x + item for x in possible_syllables))
+                possible_syllables = possible_totals
 
-            # Sample next state.
-            rand_var = random.uniform(0, 1)
-            next_state = 0
+                if M in possible_syllables:
+                    is_done = True
+                    break
 
-            while rand_var > 0:
-                rand_var -= self.A[state][next_state]
-                next_state += 1
+                # Sample next state.
+                rand_var = random.uniform(0, 1)
+                next_state = 0
 
-            next_state -= 1
-            state = next_state
+                while rand_var > 0:
+                    rand_var -= self.A[state][next_state]
+                    next_state += 1
+
+                next_state -= 1
+                state = next_state
+            if is_done:
+            	return emission, states
 
 
     def probability_alphas(self, x):

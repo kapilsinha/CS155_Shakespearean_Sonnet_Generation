@@ -55,5 +55,5 @@ def sample_sentence(hmm, obs_map, syllable_dict, num_syllables=10):
     emission, states = hmm.generate_emission(syllable_dict, num_syllables)
     sentence = [obs_map_r[i] for i in emission]
 
-    return ' '.join(sentence).capitalize() + '...'
+    return ' '.join(sentence).capitalize() + ';'
 
