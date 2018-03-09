@@ -50,6 +50,8 @@ def parse_observations_backwards(texts):
         lines = [line.split() for line in text.split('\n') if line.split()]
         obs = []
         for line in lines:
+            line = line[::-1]
+
             obs_elem = []
             for word in line:
                 word = re.sub(r'[^\w]', '', word).lower()
@@ -63,7 +65,7 @@ def parse_observations_backwards(texts):
 
             # Add the encoded sequence.
             obs.append(obs_elem)
-        total_obs.append(list(reversed(obs)))
+        total_obs.append(obs)
     return total_obs, obs_map
 
 def obs_map_reverser(obs_map):
@@ -92,8 +94,10 @@ def sample_pair(hmm, obs_map, syllable_dict, rhyming_dict, num_syllables=10):
 
     rhyme_pair = rhyming_dict[random_rhyme]
 
-    emission1, states1 = hmm.generate_emission_rhyme(syllable_dict, num_syllables, obs_map[rhyme_pair[0]])
-    emission2, states2 = hmm.generate_emission_rhyme(syllable_dict, num_syllables, obs_map[rhyme_pair[1]])
+    emission1, states1 = hmm.generate_emission_rhyme(syllable_dict, \
+                            num_syllables, obs_map[rhyme_pair[0]])
+    emission2, states2 = hmm.generate_emission_rhyme(syllable_dict, \
+                            num_syllables, obs_map[rhyme_pair[1]])
 
     # Sample and convert sentence.
     sentence1 = [obs_map_r[i] for i in emission1]

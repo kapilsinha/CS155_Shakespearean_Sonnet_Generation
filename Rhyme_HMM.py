@@ -8,6 +8,7 @@
 
 import random
 import numpy as np
+import copy
 
 class HiddenMarkovModel:
     '''
@@ -430,7 +431,7 @@ class HiddenMarkovModel:
 
             states.append(state)
 
-            emission_p = self.O[state]
+            emission_p = copy.deepcopy(self.O[state])
 
             for i in range(self.D):
                 if num_syllables + syllable_dict[i][1][0] > M:
