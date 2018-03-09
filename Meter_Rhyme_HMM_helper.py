@@ -50,6 +50,8 @@ def parse_observations_backwards(texts):
         lines = [line.split() for line in text.split('\n') if line.split()]
         obs = []
         for line in lines:
+            line = line[::-1]
+
             obs_elem = []
             for word in line:
                 word = re.sub(r'[^\w]', '', word).lower()
@@ -63,7 +65,7 @@ def parse_observations_backwards(texts):
 
             # Add the encoded sequence.
             obs.append(obs_elem)
-        total_obs.append(list(reversed(obs)))
+        total_obs.append(obs)
     return total_obs, obs_map
 
 def obs_map_reverser(obs_map):
@@ -92,7 +94,7 @@ def sample_pair(hmm, obs_map, syllable_dict, rhyming_dict, \
     random_rhyme = np.random.randint(0, len(rhyming_dict) - 1)
 
     rhyme_pair = rhyming_dict[random_rhyme]
-    # Since this is the last word and we want the last syllable in 
+    # Since this is the last word and we want the last syllable in
     # the line to be stressed (and all syllables alternating), we have:
     # if number of syllables in last word is even -> it must start with unstressed
     # if number of syllables in last word is odd -> it must start with stressed

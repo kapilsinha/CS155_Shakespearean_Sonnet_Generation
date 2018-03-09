@@ -8,6 +8,7 @@
 
 import random
 import numpy as np
+import copy
 
 class HiddenMarkovModel:
     '''
@@ -402,7 +403,7 @@ class HiddenMarkovModel:
         states = []
 
         # MUST TRAIN HMM BACKWARDS SINCE WE ARE FORCING THE FIRST WORD
-        # Since this is the last word and we want the last syllable in 
+        # Since this is the last word and we want the last syllable in
         # the line to be stressed (and all syllables alternating), we have:
         # if number of syllables in last word is even -> start with unstressed
         # if number of syllables in last word is odd -> start with stressed
@@ -436,7 +437,7 @@ class HiddenMarkovModel:
 
             states.append(state)
 
-            emission_p = self.O[state].copy()
+            emission_p = copy.deepcopy(self.O[state])
 
             for i in range(self.D):
                 if num_syllables + syllable_dict[i][1][0] > M:
