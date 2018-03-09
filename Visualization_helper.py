@@ -52,7 +52,7 @@ def text_to_wordcloud(text, max_words=50, title='', show=True):
 
     return wordcloud
 
-def states_to_wordclouds(hmm, obs_map, syllable_dict, max_words=50, show=True):
+def states_to_wordclouds(hmm, obs_map, max_words=50, show=True):
     # Initialize.
     M = 100000
     n_states = len(hmm.A)
@@ -60,7 +60,7 @@ def states_to_wordclouds(hmm, obs_map, syllable_dict, max_words=50, show=True):
     wordclouds = []
 
     # Generate a large emission.
-    emission, states = hmm.generate_emission(syllable_dict, M)
+    emission, states = hmm.generate_emission(M)
 
     # For each state, get a list of observations that have been emitted
     # from that state.
@@ -104,7 +104,7 @@ def visualize_sparsities(hmm, O_max_cols=50, O_vmax=0.1):
 # HMM ANIMATION FUNCTIONS
 ####################
 
-def animate_emission(hmm, obs_map, syllable_dict, M=8, height=12, width=12, delay=1):
+def animate_emission(hmm, obs_map, M=8, height=12, width=12, delay=1):
     # Parameters.
     lim = 1200
     text_x_offset = 40
@@ -121,7 +121,7 @@ def animate_emission(hmm, obs_map, syllable_dict, M=8, height=12, width=12, dela
     # Initialize.
     n_states = len(hmm.A)
     obs_map_r = obs_map_reverser(obs_map)
-    wordclouds = states_to_wordclouds(hmm, obs_map, syllable_dict, max_words=20, show=False)
+    wordclouds = states_to_wordclouds(hmm, obs_map, max_words=20, show=False)
 
     # Initialize plot.    
     fig, ax = plt.subplots()
@@ -174,7 +174,7 @@ def animate_emission(hmm, obs_map, syllable_dict, M=8, height=12, width=12, dela
             row.append(arrow)
         arrows.append(row)
 
-    emission, states = hmm.generate_emission(syllable_dict, M)
+    emission, states = hmm.generate_emission(M)
 
     def animate(i):
         if i >= delay:

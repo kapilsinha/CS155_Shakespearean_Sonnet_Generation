@@ -13,14 +13,15 @@ class HiddenMarkovModel:
     Class implementation of Hidden Markov Models.
     '''
 
-    def __init__(self, A, O):
+    def __init__(self, A, O, syllable_dict, \
+                 starts_stressed_set, starts_unstressed_set):
         '''
         Initializes an HMM. Assumes the following:
-            - States and observations are integers starting from 0. 
+            - States and observations are integers starting from 0.
             - There is a start state (see notes on A_start below). There
               is no integer associated with the start state, only
               probabilities in the vector A_start.
-            - There is no end state. 
+            - There is no end state.
 
         Arguments:
             A:          Transition matrix with dimensions L x L.
@@ -36,11 +37,11 @@ class HiddenMarkovModel:
             L:          Number of states.
 
             D:          Number of observations.
-            
+
             A:          The transition matrix.
-            
+
             O:          The observation matrix.
-            
+
             A_start:    Starting transition probabilities. The i^th element
                         is the probability of transitioning from the start
                         state to state i. For simplicity, we assume that
@@ -51,6 +52,9 @@ class HiddenMarkovModel:
         self.D = len(O[0])
         self.A = A
         self.O = O
+        self.syllable_dict = syllable_dict
+        self.starts_stressed_set = starts_stressed_set
+        self.starts_unstressed_set = starts_unstressed_set
         self.A_start = [1. / self.L for _ in range(self.L)]
 
 
@@ -381,7 +385,7 @@ class HiddenMarkovModel:
                 for xt in range(self.D):
                     self.O[curr][xt] = O_num[curr][xt] / O_den[curr]
 
-    def generate_emission(self, syllable_dict, M):
+    def generate_emission(self, M):
         '''
         Generates an emission of length M syllables, assuming that the starting state
         is chosen uniformly at random. Syllable_dict maps observations to tuple of syllables
@@ -417,7 +421,7 @@ class HiddenMarkovModel:
                 # Always add calculated next observation to emissions and discard
                 # the entire emission if the number of syllables exceeds M
                 emission.append(next_obs)
-                obs_possible_syllables = syllable_dict[next_obs]
+                obs_possible_syllables = self.syllable_dict[next_obs]
                 # If adding this word at the end (and letting the word use the
                 # end number of syllables) brings the sentence to M syllables,
                 # we do so
@@ -503,7 +507,8 @@ class HiddenMarkovModel:
         return prob
 
 
-def supervised_HMM(X, Y):
+def supervised_HMM(X, Y, syllable_dict, \
+                   starts_stressed_set, starts_unstressed_set):
     '''
     Helper function to train a supervised HMM. The function determines the
     number of unique states and observations in the given data, initializes
@@ -551,13 +556,15 @@ def supervised_HMM(X, Y):
             O[i][j] /= norm
 
     # Train an HMM with labeled data.
-    HMM = HiddenMarkovModel(A, O)
+    HMM = HiddenMarkovModel(A, O, syllable_dict, \
+        starts_stressed_set, starts_unstressed_set)
     HMM.supervised_learning(X, Y)
 
     return HMM
 
 
-def unsupervised_HMM(X, n_states, N_iters):
+def unsupervised_HMM(X, n_states, N_iters, syllable_dict, \
+                     starts_stressed_set = None, starts_unstressed_set = None):
     '''
     Helper function to train an unsupervised HMM. The function determines the
     number of unique observations in the given data, initializes
@@ -600,7 +607,8 @@ def unsupervised_HMM(X, n_states, N_iters):
             O[i][j] /= norm
 
     # Train an HMM with unlabeled data.
-    HMM = HiddenMarkovModel(A, O)
+    HMM = HiddenMarkovModel(A, O, syllable_dict, \
+        starts_stressed_set, starts_unstressed_set)
     HMM.unsupervised_learning(X, N_iters)
 
     return HMM

@@ -15,7 +15,8 @@ class HiddenMarkovModel:
     Class implementation of Hidden Markov Models.
     '''
 
-    def __init__(self, A, O):
+    def __init__(self, A, O, syllable_dict, \
+                 starts_stressed_set, starts_unstressed_set):
         '''
         Initializes an HMM. Assumes the following:
             - States and observations are integers starting from 0.
@@ -53,6 +54,9 @@ class HiddenMarkovModel:
         self.D = len(O[0])
         self.A = A
         self.O = O
+        self.syllable_dict = syllable_dict
+        self.starts_stressed_set = starts_stressed_set
+        self.starts_unstressed_set = starts_unstressed_set
         self.A_start = [1. / self.L for _ in range(self.L)]
 
 
@@ -383,7 +387,7 @@ class HiddenMarkovModel:
                 for xt in range(self.D):
                     self.O[curr][xt] = O_num[curr][xt] / O_den[curr]
 
-    def generate_emission_rhyme(self, syllable_dict, M, start_word):
+    def generate_emission(self, M, start_word = None):
         '''
         Generates an emission of length M syllables, assuming that the starting state
         is chosen uniformly at random. Syllable_dict maps observations to tuple of syllables
@@ -396,6 +400,8 @@ class HiddenMarkovModel:
 
             states:     The randomly generated states as a list.
         '''
+        if start_word == None:
+            start_word = np.random.randint(len(self.O[0]))
         num_syllables = 0
 
         emission = []
@@ -412,10 +418,10 @@ class HiddenMarkovModel:
         states.append(state)
 
         # Check if not an end word
-        if([] in syllable_dict[start_word]):
-            num_syllables += syllable_dict[start_word][1][0]
+        if([] in self.syllable_dict[start_word]):
+            num_syllables += self.syllable_dict[start_word][1][0]
         else:
-            num_syllables += syllable_dict[start_word][0][0]
+            num_syllables += self.syllable_dict[start_word][0][0]
 
         while num_syllables < M:
             # Sample next observation.
@@ -434,105 +440,16 @@ class HiddenMarkovModel:
             emission_p = copy.deepcopy(self.O[state])
 
             for i in range(self.D):
-                if num_syllables + syllable_dict[i][1][0] > M:
+                if num_syllables + self.syllable_dict[i][1][0] > M:
                     emission_p[i] = 0
 
             # Normalize probablities
             emission_p = np.array(emission_p) / np.sum(emission_p)
             next_word = np.random.choice(self.D, p=emission_p)
-            num_syllables += syllable_dict[next_word][1][0]
+            num_syllables += self.syllable_dict[next_word][1][0]
             emission.append(next_word)
 
         return emission, states
-
-
-    # def generate_emission_rhyme(self, syllable_dict, M, start_word):
-    #     '''
-    #     Generates an emission of length M syllables, assuming that the starting state
-    #     is chosen uniformly at random. Syllable_dict maps observations to tuple of syllables
-    #
-    #     Arguments:
-    #         M:          Length of the emission to generate.
-    #
-    #     Returns:
-    #         emission:   The randomly generated emission as a list.
-    #
-    #         states:     The randomly generated states as a list.
-    #     '''
-    #     while True:
-    #         emission = []
-    #         #state = random.choice(range(self.L))
-    #
-    #         state = -1
-    #         best_prob = 0
-    #         for i in range(self.L):
-    #             if self.O[i][start_word] > best_prob:
-    #                 best_prob = self.O[i][start_word]
-    #                 state = i
-    #         states = []
-    #
-    #
-    #         emission.append(start_word)
-    #         # Maintains set of possible number of syllables up until last word
-    #         possible_syllables = syllable_dict[start_word]
-    #
-    #         possible_syllables = [x for x in possible_syllables if x != []]
-    #
-    #         if(len(possible_syllables) == 0):
-    #             possible_syllables = [[0]]
-    #
-    #         is_done = False
-    #         while min(possible_syllables)[0] < M:
-    #             # Append state.
-    #             states.append(state)
-    #
-    #             # Sample next observation.
-    #             rand_var = random.uniform(0, 1)
-    #             next_obs = 0
-    #
-    #             while rand_var > 0:
-    #                 rand_var -= self.O[state][next_obs]
-    #                 next_obs += 1
-    #
-    #             next_obs -= 1
-    #             # Always add calculated next observation to emissions and discard
-    #             # the entire emission if the number of syllables exceeds M
-    #             emission.append(next_obs)
-    #             obs_possible_syllables = syllable_dict[next_obs]
-    #             # If adding this word at the end (and letting the word use the
-    #             # end number of syllables) brings the sentence to M syllables,
-    #             # we do so
-    #
-    #             for item in obs_possible_syllables[0]:
-    #                 if M in set(x + item for x in possible_syllables):
-    #                     is_done = True
-    #                     break
-    #
-    #             # Add all possible number of syllables in the sentence up to the
-    #             # last word and if any of them equal M, return. If the minimum
-    #             # number exceeds M, restart the function
-    #             possible_totals = set()
-    #             for item in obs_possible_syllables[1]:
-    #                 possible_totals = possible_totals.union \
-    #                         (set(x + item for x in possible_syllables))
-    #             possible_syllables = possible_totals
-    #
-    #             if M in possible_syllables:
-    #                 is_done = True
-    #                 break
-    #
-    #             # Sample next state.
-    #             rand_var = random.uniform(0, 1)
-    #             next_state = 0
-    #
-    #             while rand_var > 0:
-    #                 rand_var -= self.A[state][next_state]
-    #                 next_state += 1
-    #
-    #             next_state -= 1
-    #             state = next_state
-    #         if is_done:
-    #         	return emission, states
 
 
     def probability_alphas(self, x):
@@ -584,7 +501,8 @@ class HiddenMarkovModel:
         return prob
 
 
-def supervised_HMM(X, Y):
+def supervised_HMM(X, Y, syllable_dict, \
+                   starts_stressed_set, starts_unstressed_set):
     '''
     Helper function to train a supervised HMM. The function determines the
     number of unique states and observations in the given data, initializes
@@ -632,13 +550,15 @@ def supervised_HMM(X, Y):
             O[i][j] /= norm
 
     # Train an HMM with labeled data.
-    HMM = HiddenMarkovModel(A, O)
+    HMM = HiddenMarkovModel(A, O, syllable_dict, \
+        starts_stressed_set, starts_unstressed_set)
     HMM.supervised_learning(X, Y)
 
     return HMM
 
 
-def unsupervised_HMM(X, n_states, N_iters):
+def unsupervised_HMM(X, n_states, N_iters, syllable_dict, \
+                     starts_stressed_set = None, starts_unstressed_set = None):
     '''
     Helper function to train an unsupervised HMM. The function determines the
     number of unique observations in the given data, initializes
@@ -681,7 +601,8 @@ def unsupervised_HMM(X, n_states, N_iters):
             O[i][j] /= norm
 
     # Train an HMM with unlabeled data.
-    HMM = HiddenMarkovModel(A, O)
+    HMM = HiddenMarkovModel(A, O, syllable_dict, \
+        starts_stressed_set, starts_unstressed_set)
     HMM.unsupervised_learning(X, N_iters)
 
     return HMM
