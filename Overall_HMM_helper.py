@@ -21,6 +21,8 @@ def parse_observations(texts):
     for text in texts:
         # Convert text to dataset.
         lines = [line.split() for line in text.split('\n') if line.split()]
+        # concatenated every pair of sublists
+        lines = [ x+y for x,y in zip(lines[0::2], lines[1::2]) ]
         obs = []
         for line in lines:
             obs_elem = []
